@@ -1,0 +1,6 @@
+{
+  "toolkit.legacyUserProfileCustomizations.stylesheets": true,
+
+  "devtools.chrome.enabled": true,
+  "devtools.debugger.remote-enabled": true
+}

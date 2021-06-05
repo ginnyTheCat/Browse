@@ -1,0 +1,36 @@
+{
+  "browser.region.network.url": "",
+  "browser.region.update.enabled": false,
+
+  "toolkit.telemetry.unified": false,
+  "toolkit.telemetry.enabled": false,
+  "toolkit.telemetry.server": "data:,",
+  "toolkit.telemetry.archive.enabled": false,
+  "toolkit.telemetry.newProfilePing.enabled": false,
+  "toolkit.telemetry.shutdownPingSender.enabled": false,
+  "toolkit.telemetry.updatePing.enabled": false,
+  "toolkit.telemetry.bhrPing.enabled": false,
+  "toolkit.telemetry.firstShutdownPing.enabled": false,
+
+  "toolkit.telemetry.coverage.opt-out": true,
+  "toolkit.coverage.opt-out": true,
+  "toolkit.coverage.endpoint.base": "",
+
+  "datareporting.healthreport.uploadEnabled": false,
+  "datareporting.policy.dataSubmissionEnabled": false,
+
+  "app.shield.optoutstudies.enabled": false,
+
+  "browser.discovery.enabled": false,
+
+  "breakpad.reportURL": "",
+  "browser.tabs.crashReporting.sendReport": false,
+  "browser.crashReports.unsubmittedCheck.autoSubmit2": false,
+
+  "app.normandy.enabled": false,
+  "app.normandy.api_url": "",
+
+  "browser.ping-centre.telemetry": false,
+
+  "extensions.webcompat-reporter.enabled": false
+}

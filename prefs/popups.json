@@ -1,0 +1,27 @@
+{
+  "browser.shell.checkDefaultBrowser": false,
+
+  "media.videocontrols.picture-in-picture.video-toggle.enabled": false,
+
+  "signon.autofillForms": false,
+  "signon.generation.enabled": false,
+  "signon.management.page.breach-alerts.enabled": false,
+  "signon.rememberSignons": false,
+
+  "extensions.formautofill.available": "off",
+  "extensions.formautofill.addresses.enabled": false,
+  "extensions.formautofill.creditCards.available": false,
+  "extensions.formautofill.creditCards.enabled": false,
+  "extensions.formautofill.heuristics.enabled": false,
+
+  "browser.urlbar.tipShownCount.searchTip_onboard": 4,
+  "browser.urlbar.tipShownCount.searchTip_redirect": 4,
+
+  "browser.startup.homepage_override.mstone": " ",
+
+  "datareporting.policy.dataSubmissionPolicyAcceptedVersion": 2,
+  "datareporting.policy.dataSubmissionPolicyNotifiedTime": "2000000000000",
+
+  "browser.bookmarks.addedImportButton": true,
+  "browser.bookmarks.restore_default_bookmarks": false
+}

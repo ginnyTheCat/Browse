@@ -1,0 +1,6 @@
+{
+  "devtools.cache.disabled": true,
+  "devtools.theme": "dark",
+
+  "browser.aboutConfig.showWarning": false
+}

@@ -1,0 +1,43 @@
+{
+  "beacon.enabled": false,
+
+  "browser.send_pings": false,
+  "browser.sessionstore.privacy_level": 2,
+
+  "browser.safebrowsing.downloads.remote.enabled": false,
+
+  "browser.urlbar.speculativeConnect.enabled": false,
+
+  "device.sensors.ambientLight.enabled": false,
+  "device.sensors.enabled": false,
+  "device.sensors.motion.enabled": false,
+  "device.sensors.orientation.enabled": false,
+  "device.sensors.proximity.enabled": false,
+  "dom.battery.enabled": false,
+  "dom.event.clipboardevents.enabled": false,
+
+  "experiments.activeExperiment": false,
+  "experiments.enabled": false,
+  "experiments.manifest.uri": "",
+  "experiments.supported": false,
+
+  "extensions.getAddons.showPane": false,
+
+  "geo.provider.network.url": "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%",
+
+  "media.navigator.enabled": false,
+
+  "network.http.referer.spoofSource": true,
+
+  "privacy.donottrackheader.enabled": true,
+
+  "_privacy.firstparty.isolate": true,
+  "_privacy.resistFingerprinting": true,
+
+  "privacy.trackingprotection.cryptomining.enabled": true,
+  "privacy.trackingprotection.enabled": true,
+  "privacy.trackingprotection.fingerprinting.enabled": true,
+
+  "webgl.renderer-string-override": " ",
+  "webgl.vendor-string-override": " "
+}
