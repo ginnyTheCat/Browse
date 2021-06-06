@@ -1,3 +1,53 @@
 @-moz-document url("moz-extension://{ublock-origin}/popup-fenix.html")
-  #main
-    max-width: none !important
+  body
+    --default-ink: #{$panel-text} !important
+    --default-surface: #{$panel-background} !important
+    --default-surface-hover: #{$panel-background-hover} !important
+    --popup-gap: #{$button-padding} !important
+    --popup-gap-thin: #{$button-line-padding} !important
+    --hr-ink: #{$button-line-color} !important
+    --bg-popup-cell-2: transparent !important
+    --bg-transient-notice: #{$panel-background-hover} !important
+    --fg-0-50: #{$panel-text} !important
+    --fg-0-70: #{$panel-text} !important
+
+  body
+    padding: $button-line-padding $button-padding !important
+
+  #panes
+    flex-direction: column !important
+
+  #main,
+  #firewall
+    max-width: unset !important
+
+  #stickyTools
+    margin: 0 !important
+
+  #revertRules
+    margin-top: $button-padding !important
+
+  #basicStats
+    padding: $button-line-padding $button-line-padding 0 $button-line-padding
+
+  .toolRibbon, #moreOrLess
+    padding: $button-line-padding 0
+
+  #moreOrLess
+    column-gap: unset !important
+
+  .tool
+    padding: $button-padding 0 !important
+    width: 100%
+
+  #switch,
+  .tool,
+  #moreOrLess > span
+    border-radius: $button-radius
+
+  #switch:hover
+    background: none !important
+
+  .rulesetTools > span
+    border: none !important
+    fill: $panel-text !important
