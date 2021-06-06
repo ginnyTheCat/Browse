@@ -27,7 +27,7 @@
 
   "media.navigator.enabled": false,
 
-  "network.http.referer.spoofSource": true,
+  "_network.http.referer.spoofSource": true,
 
   "privacy.donottrackheader.enabled": true,
 

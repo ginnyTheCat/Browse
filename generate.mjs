@@ -1,23 +1,19 @@
 import axios from "axios";
-import { randomBytes } from "crypto";
-import {} from "fs";
+import { createHash, randomBytes } from "crypto";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
+import { encodeBlock, encodeBound } from "lz4";
 import { render } from "node-sass";
 import { join } from "path";
 import { promisify } from "util";
 
 const profile = "profile";
 
-async function prefs(addonIds) {
-  const uuids = {};
-  for (const [_, id, uuid] of addonIds) {
-    uuids[id] = uuid;
-  }
+async function writeFolderFile(folder, file, content) {
+  await mkdir(join(profile, folder), { recursive: true });
+  await writeFile(join(profile, folder, file), content);
+}
 
-  let prefs = {
-    "extensions.webextensions.uuids": uuids,
-  };
-
+async function prefs(prefs) {
   const files = await readdir("prefs");
   for (const name of files) {
     const content = JSON.parse(await readFile(join("prefs", name)));
@@ -25,6 +21,7 @@ async function prefs(addonIds) {
   }
 
   const code = Object.entries(prefs)
+    .filter(([key]) => key[0] !== "_")
     .map(
       ([key, val]) =>
         `user_pref("${key}", ${JSON.stringify(
@@ -33,47 +30,122 @@ async function prefs(addonIds) {
     )
     .join("\n");
 
-  await mkdir(profile, { recursive: true });
-  await writeFile(join(profile, "prefs.js"), code);
+  await writeFolderFile("", "prefs.js", code);
 }
 
 async function downloadAddon(slug) {
   const res = await axios.get(
-    `https://addons.mozilla.org/api/v5/addons/addon/${slug}`
+    `https://addons.mozilla.org/api/v5/addons/addon/${encodeURIComponent(
+      slug
+    )}`,
+    { params: { lang: "en-US" } }
   );
 
-  const url = res.data.current_version.files[0].url;
-  const id = res.data.guid;
+  const version = res.data.current_version;
+  const license = version.license.id;
+  const licenseName = version.license.name["en-US"];
 
-  const extensions = join(profile, "extensions");
-  await mkdir(extensions, { recursive: true });
+  if (
+    ![
+      6, // GPL 3.0
+      12, // LGPL 3.0
+      22, // MIT
+      3338, // Mozilla 2.0
+    ].includes(license) &&
+    (slug !== "universal-bypass" || licenseName !== "Unlicense")
+  ) {
+    throw `Tried to download the '${slug}' addon marked with a non open source/unknown license '${licenseName}' (${version.license.url}).`;
+  }
+
+  const file = version.files[0];
+
+  if (!file.hash.startsWith("sha256:")) {
+    throw `Expected hash to be using SHA256, got '${file.hash}'`;
+  }
+  const hash = file.hash.slice(7);
+
+  const url = file.url;
+  const id = res.data.guid;
 
   const res2 = await axios.get(url, { responseType: "arraybuffer" });
 
-  await writeFile(join(extensions, `${id}.xpi`), res2.data);
+  const hash2 = createHash("sha256").update(res2.data).digest("hex");
+  if (hash !== hash2) {
+    throw `The expected hash (${hash}) does not match the one from the actual addon file (${hash2}).`;
+  }
 
-  return [slug, id];
+  await writeFolderFile("extensions", `${id}.xpi`, res2.data);
+
+  return { slug, id };
 }
 
 function addons(addons) {
   return Promise.all(addons.map(downloadAddon));
 }
 
+function capitalize(str) {
+  return str[0].toUpperCase() + str.slice(1);
+}
+
 async function style(name, addons) {
   const res = await promisify(render)({ file: `style/${name}/index.sass` });
   let css = res.css.toString("utf-8");
 
-  for (const [name, _, id] of addons) {
-    css = css.replace(new RegExp(`{${name}}`, "g"), id);
+  for (const { slug, uuid } of addons) {
+    css = css.replace(new RegExp(`{${slug}}`, "g"), uuid);
   }
 
-  const chrome = join(profile, "chrome");
-  await mkdir(chrome, { recursive: true });
+  await writeFolderFile("chrome", `user${capitalize(name)}.css`, css);
+}
 
-  await writeFile(
-    join(chrome, `user${name[0].toUpperCase()}${name.slice(1)}.css`),
-    css
-  );
+function compressMozlz4(input) {
+  const compressed = Buffer.alloc(encodeBound(input.length));
+  const compressedSize = encodeBlock(input, compressed);
+
+  const prefix = "mozLz40\0";
+  const output = Buffer.alloc(prefix.length + 4 + compressedSize);
+
+  var offset = output.write(prefix);
+  offset = output.writeUInt32LE(input.length, offset);
+
+  compressed.copy(output, offset);
+
+  return output;
+}
+
+async function search() {
+  const google = "Google";
+  const bing = "Bing";
+  const duckDuckGo = "DuckDuckGo";
+  const wikipedia = "Wikipedia (en)";
+
+  const engines = [google, bing, duckDuckGo, wikipedia];
+
+  const search = google;
+  const searchPrivate = duckDuckGo;
+
+  const data = {
+    version: 6,
+    engines: engines.map((n, i) => ({
+      _name: n,
+      _isAppProvided: true,
+      _metaData: { order: i + 1 },
+    })),
+    metaData: {
+      useSavedOrder: true,
+      current: search,
+      private: searchPrivate,
+    },
+  };
+
+  const compressed = compressMozlz4(Buffer.from(JSON.stringify(data)));
+
+  await writeFolderFile("", "search.json.mozlz4", compressed);
+
+  return {
+    "browser.urlbar.placeholderName": search,
+    "browser.urlbar.placeholderName.private": searchPrivate,
+  };
 }
 
 async function run() {
@@ -87,22 +159,29 @@ async function run() {
     "temporary-containers",
   ];
 
+  const p = await search();
+
   const addonIds = await addons(addonSlugs);
 
+  const uuids = {};
   for (const ids of addonIds) {
     const bytes = await promisify(randomBytes)(16);
     const hex = bytes.toString("hex");
-    ids[2] = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
+    const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
       12,
       16
     )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+
+    ids.uuid = uuid;
+    uuids[ids.id] = uuid;
   }
+  p["extensions.webextensions.uuids"] = uuids;
 
   return Promise.all([
-    prefs(addonIds),
+    prefs(p),
     style("chrome", addonIds),
     style("content", addonIds),
   ]);
 }
 
-run();
+run().catch(console.error);
