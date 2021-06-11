@@ -2,8 +2,8 @@ import axios from "axios";
 import { createHash, randomBytes } from "crypto";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { encodeBlock, encodeBound } from "lz4";
-import { render } from "node-sass";
 import { join } from "path";
+import sass from "sass";
 import { promisify } from "util";
 
 const profile = "profile";
@@ -76,7 +76,7 @@ async function downloadAddon(slug) {
 
   await writeFolderFile("extensions", `${id}.xpi`, res2.data);
 
-  return { slug, id };
+  return [slug, id];
 }
 
 function addons(addons) {
@@ -87,13 +87,28 @@ function capitalize(str) {
   return str[0].toUpperCase() + str.slice(1);
 }
 
-async function style(name, addons) {
-  const res = await promisify(render)({ file: `style/${name}/index.sass` });
-  let css = res.css.toString("utf-8");
+function sassType(o) {
+  return typeof o === "object"
+    ? `(${Object.entries(o)
+        .map(([key, val]) => `${JSON.stringify(key)}: ${sassType(val)}`)
+        .join(", ")})`
+    : JSON.stringify(o);
+}
 
-  for (const { slug, uuid } of addons) {
-    css = css.replace(new RegExp(`{${slug}}`, "g"), uuid);
-  }
+async function style(name, variables) {
+  let input = Object.entries(variables)
+    .map(([key, val]) => `$${key}: ${sassType(val)}\n`)
+    .join("");
+
+  const path = join("style", name);
+  input += await readFile(join(path, "index.sass"));
+
+  const res = await promisify(sass.render)({
+    data: input,
+    includePaths: [path],
+    indentedSyntax: true, // User SASS instead of SCSS
+  });
+  let css = res.css.toString();
 
   await writeFolderFile("chrome", `user${capitalize(name)}.css`, css);
 }
@@ -164,7 +179,8 @@ async function run() {
   const addonIds = await addons(addonSlugs);
 
   const uuids = {};
-  for (const ids of addonIds) {
+  const ids = {};
+  for (const [slug, id] of addonIds) {
     const bytes = await promisify(randomBytes)(16);
     const hex = bytes.toString("hex");
     const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
@@ -172,15 +188,19 @@ async function run() {
       16
     )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 
-    ids.uuid = uuid;
-    uuids[ids.id] = uuid;
+    uuids[id] = uuid;
+    ids[slug] = uuid;
   }
   p["extensions.webextensions.uuids"] = uuids;
 
   return Promise.all([
     prefs(p),
-    style("chrome", addonIds),
-    style("content", addonIds),
+    style("chrome", {}),
+    style("content", {
+      "addon-ids": ids,
+
+      "addons-change-ui": true,
+    }),
   ]);
 }
 
